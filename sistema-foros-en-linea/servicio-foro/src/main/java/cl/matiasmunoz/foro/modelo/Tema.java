@@ -40,6 +40,10 @@ public class Tema {
     @Column(name = "fecha_actualizacion", nullable = false)
     private LocalDateTime fechaActualizacion;
 
+    @Convert(converter = org.hibernate.type.NumericBooleanConverter.class)
+    @Column(nullable = false)
+    private boolean oculto;
+
     @PrePersist
     void registrarFecha() {
         fechaCreacion = LocalDateTime.now(java.time.Clock.systemUTC());

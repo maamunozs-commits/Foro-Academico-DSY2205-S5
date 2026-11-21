@@ -11,6 +11,9 @@ public interface RepositorioComentarios extends JpaRepository<Comentario, Long> 
     @Query("select c from Comentario c where c.tema.id = :temaId order by c.fechaCreacion, c.id")
     List<Comentario> listarPorTema(Long temaId);
 
+    @Query("select c from Comentario c where c.tema.id = :temaId and c.oculto = false order by c.fechaCreacion, c.id")
+    List<Comentario> listarVisiblesPorTema(Long temaId);
+
     @org.springframework.data.jpa.repository.Modifying
     @Query("delete from Comentario c where c.tema.id = :temaId")
     void eliminarPorTema(Long temaId);

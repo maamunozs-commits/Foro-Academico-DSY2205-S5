@@ -1,11 +1,12 @@
-FROM maven:3.9.12-eclipse-temurin-21 AS compilacion
+FROM maven:3.9-eclipse-temurin-21 AS compilacion
 WORKDIR /proyecto
 COPY pom.xml .
 COPY nucleo-comun nucleo-comun
 COPY servicio-usuarios servicio-usuarios
 COPY servicio-foro servicio-foro
+COPY servicio-moderacion servicio-moderacion
 ARG MODULO
-RUN mvn -B -pl ${MODULO} -am package -DskipTests
+RUN --mount=type=cache,target=/root/.m2 mvn -B -pl ${MODULO} -am package -DskipTests
 FROM eclipse-temurin:21-jre
 WORKDIR /aplicacion
 ARG MODULO

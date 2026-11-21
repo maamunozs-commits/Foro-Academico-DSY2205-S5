@@ -1,3 +1,4 @@
+name: dsy2205-semana5
 services:
   oracle:
     image: gvenzl/oracle-free:23.26.3-slim
@@ -6,17 +7,18 @@ services:
       CLAVE_USUARIOS: ${ORACLE_CLAVE_USUARIOS:?Configure ORACLE_CLAVE_USUARIOS}
       CLAVE_FORO: ${ORACLE_CLAVE_FORO:?Configure ORACLE_CLAVE_FORO}
     ports:
-      - "1522:1521"
+      - "127.0.0.1:${PUERTO_ORACLE:-1522}:1521"
     volumes:
       - datos-oracle:/opt/oracle/oradata
       - ../scripts:/opt/foro-sql:ro
       - ./herramientas/inicializar-oracle.sh:/container-entrypoint-initdb.d/01-foro.sh:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 30
-      start_period: 60s
+      retries: 40
+      start_period: 75s
+
   usuarios:
     build:
       context: .
@@ -27,10 +29,11 @@ services:
       ORACLE_CLAVE_USUARIOS: ${ORACLE_CLAVE_USUARIOS}
       JWT_SECRETO: ${JWT_SECRETO:?Configure JWT_SECRETO}
     ports:
-      - "8081:8081"
+      - "127.0.0.1:${PUERTO_USUARIOS:-8081}:8081"
     depends_on:
       oracle:
         condition: service_healthy
+
   foro:
     build:
       context: .
@@ -39,11 +42,34 @@ services:
     environment:
       ORACLE_URL: jdbc:oracle:thin:@oracle:1521/FREEPDB1
       ORACLE_CLAVE_FORO: ${ORACLE_CLAVE_FORO}
-      JWT_SECRETO: ${JWT_SECRETO:?Configure JWT_SECRETO}
+      JWT_SECRETO: ${JWT_SECRETO}
     ports:
-      - "8082:8082"
+      - "127.0.0.1:${PUERTO_FORO:-8082}:8082"
     depends_on:
       oracle:
         condition: service_healthy
+
+  moderacion:
+    build:
+      context: .
+      args:
+        MODULO: servicio-moderacion
+    environment:
+      FORO_URL: http://foro:8082
+      JWT_SECRETO: ${JWT_SECRETO}
+    ports:
+      - "127.0.0.1:${PUERTO_MODERACION:-8083}:8083"
+    depends_on:
+      - foro
+
+  frontend:
+    build: ../frontend
+    ports:
+      - "${HOST_WEB:-127.0.0.1}:${PUERTO_WEB:-8080}:80"
+    depends_on:
+      - usuarios
+      - foro
+      - moderacion
+
 volumes:
   datos-oracle:

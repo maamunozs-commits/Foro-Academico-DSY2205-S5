@@ -91,6 +91,7 @@ public class ServicioForo {
         Specification<Tema> filtro =
                 (raiz, consulta, constructor) -> {
                     var condiciones = new ArrayList<Predicate>();
+                    condiciones.add(constructor.isFalse(raiz.get("oculto")));
                     if (categoriaId != null) {
                         condiciones.add(
                                 constructor.equal(raiz.get("categoria").get("id"), categoriaId));
@@ -161,7 +162,7 @@ public class ServicioForo {
     @Transactional(readOnly = true)
     public List<RespuestaComentario> listarComentarios(Long temaId) {
         buscarTema(temaId);
-        return comentarios.listarPorTema(temaId).stream().map(RespuestaComentario::desde).toList();
+        return comentarios.listarVisiblesPorTema(temaId).stream().map(RespuestaComentario::desde).toList();
     }
 
     public RespuestaComentario comentar(Long temaId, DatosComentario datos, Jwt sesion) {
@@ -204,14 +205,15 @@ public class ServicioForo {
     }
 
     private Tema buscarTema(Long id) {
-        return temas.findById(id)
+        return temas.findById(id).filter(tema -> !tema.isOculto())
                 .orElseThrow(() -> new ExcepcionNegocio(HttpStatus.NOT_FOUND, "El tema no existe"));
     }
 
     private Comentario buscarComentario(Long temaId, Long id) {
+        buscarTema(temaId);
         return comentarios
                 .findById(id)
-                .filter(comentario -> comentario.getTema().getId().equals(temaId))
+                .filter(comentario -> !comentario.isOculto() && comentario.getTema().getId().equals(temaId))
                 .orElseThrow(
                         () ->
                                 new ExcepcionNegocio(
