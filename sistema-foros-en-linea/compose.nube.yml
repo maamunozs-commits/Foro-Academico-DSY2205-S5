@@ -1,0 +1,64 @@
+name: dsy2205-semana5-nube
+services:
+  usuarios:
+    build:
+      context: .
+      args:
+        MODULO: servicio-usuarios
+    environment:
+      ORACLE_URL: ${ORACLE_URL:?Configure la URL JDBC}
+      ORACLE_CLAVE_USUARIOS: ${ORACLE_CLAVE_USUARIOS:?Configure la clave de MM_USUARIOS}
+      JWT_SECRETO: ${JWT_SECRETO:?Configure la clave JWT}
+    volumes:
+      - ${ORACLE_WALLET_DIR:?Indique la ruta al wallet}:/run/oracle-wallet:ro
+    restart: unless-stopped
+
+  foro:
+    build:
+      context: .
+      args:
+        MODULO: servicio-foro
+    environment:
+      ORACLE_URL: ${ORACLE_URL:?Configure la URL JDBC}
+      ORACLE_CLAVE_FORO: ${ORACLE_CLAVE_FORO:?Configure la clave de MM_FORO}
+      JWT_SECRETO: ${JWT_SECRETO:?Configure la clave JWT}
+    volumes:
+      - ${ORACLE_WALLET_DIR:?Indique la ruta al wallet}:/run/oracle-wallet:ro
+    restart: unless-stopped
+
+  moderacion:
+    build:
+      context: .
+      args:
+        MODULO: servicio-moderacion
+    environment:
+      FORO_URL: http://foro:8082
+      JWT_SECRETO: ${JWT_SECRETO:?Configure la clave JWT}
+    restart: unless-stopped
+
+  frontend:
+    build: ../frontend
+    depends_on:
+      - usuarios
+      - foro
+      - moderacion
+    restart: unless-stopped
+
+  https:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMINIO_FORO: ${DOMINIO_FORO:?Configure el dominio público}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - certificados:/data
+      - configuracion-https:/config
+    depends_on:
+      - frontend
+    restart: unless-stopped
+
+volumes:
+  certificados:
+  configuracion-https:

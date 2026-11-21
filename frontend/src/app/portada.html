@@ -1,0 +1,52 @@
+<div class="contenedor">
+  <section class="bienvenida">
+    <div>
+      <h1>Foro Académico</h1>
+      <p>Conversa sobre desarrollo de software, comparte soluciones y aprende de otras experiencias.</p>
+      <a class="boton" routerLink="/publicar">Publicar tema</a>
+    </div>
+    <div class="esquema" aria-hidden="true">
+      <span class="burbuja burbuja-grande"><i></i><i></i><i></i></span>
+      <span class="burbuja burbuja-chica"><i></i><i></i></span>
+    </div>
+  </section>
+
+  <section class="explorador" aria-labelledby="temas">
+    <div class="cabecera-lista">
+      <div><h2 id="temas">Temas del foro</h2><p aria-live="polite">{{ temas().length }} {{ temas().length === 1 ? 'tema' : 'temas' }}</p></div>
+      <label class="buscador">
+        <span class="visually-hidden">Buscar temas</span>
+        <span aria-hidden="true">⌕</span>
+        <input type="search" placeholder="Buscar por título o contenido" [value]="texto()" (input)="texto.set($any($event.target).value)">
+      </label>
+    </div>
+    <div class="filtros" role="group" aria-label="Categorías del foro">
+      <button class="filtro" type="button" [class.activo]="!categoria()" [attr.aria-pressed]="!categoria()" (click)="categoria.set('')">Todas</button>
+      @for (item of categorias; track item.id) {
+        <button class="filtro" type="button" [class.activo]="categoria() === item.id" [attr.aria-pressed]="categoria() === item.id" (click)="categoria.set(item.id)">{{ item.nombre }}</button>
+      }
+    </div>
+    <div class="row g-3">
+      @for (tema of temas(); track tema.id) {
+        @let cat = datosCategoria(tema.categoria);
+        <div class="col-12 col-md-6 col-lg-4">
+          <article class="tarjeta-tema">
+            <div class="tema-etiqueta">
+              <span class="tema-icono" [attr.data-color]="cat?.color" aria-hidden="true">{{ cat?.simbolo }}</span>
+              <span>{{ cat?.nombre }}</span>
+            </div>
+            <h3><a [routerLink]="['/temas', tema.id]">{{ tema.titulo }}</a></h3>
+            <p class="extracto">{{ tema.texto }}</p>
+            <div class="tema-meta">
+              <div class="inicial-autor" aria-hidden="true">{{ foro.nombre(tema.autor).slice(0,1) }}</div>
+              <div><strong>{{ foro.nombre(tema.autor) }}</strong><time [attr.datetime]="tema.fecha">{{ tema.fecha | date:'d MMM y' }}</time></div>
+              <span class="respuestas" [attr.aria-label]="contar(tema.id) + ' comentarios'">{{ contar(tema.id) }} <span aria-hidden="true">▢</span></span>
+            </div>
+          </article>
+        </div>
+      } @empty {
+        <div class="col-12"><div class="panel vacío"><h3>No se encontraron temas</h3><p>Prueba con otro término o categoría.</p><button class="boton secundario" type="button" (click)="limpiar()">Limpiar filtros</button></div></div>
+      }
+    </div>
+  </section>
+</div>

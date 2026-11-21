@@ -1,0 +1,86 @@
+<div class="contenedor pagina-estrecha">
+  <a class="volver" routerLink="/">Volver a los temas</a>
+  <section class="panel formulario">
+    <h1>{{ titulo }}</h1>
+    @if (mensaje()) { <p class="mensaje error" role="alert">{{ mensaje() }}</p> }
+    @if (aviso()) { <p class="mensaje éxito" role="status">{{ aviso() }}</p> }
+    @switch (modo) {
+      @case ('ingresar') {
+        <form [formGroup]="ingreso" (ngSubmit)="iniciar()" novalidate>
+          <label for="correo">Correo electrónico</label>
+          <input id="correo" type="email" formControlName="correo" autocomplete="username" required maxlength="150">
+          @if (error(ingreso.controls.correo, 'El correo'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+          <label for="clave">Contraseña</label>
+          <input id="clave" type="password" formControlName="clave" autocomplete="current-password" required>
+          @if (error(ingreso.controls.clave, 'La contraseña'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+          <button type="submit" class="boton" [disabled]="ocupado()">Ingresar</button>
+        </form>
+        <div class="enlaces-formulario"><a routerLink="/recuperar">Recuperar contraseña</a><a routerLink="/registro">Crear cuenta</a></div>
+        <aside class="demostracion">
+          <h2>Cuentas de demostración</h2>
+          <button class="boton secundario" type="button" (click)="rellenar('USUARIO')">Usar cuenta de usuario</button>
+          <button class="boton secundario" type="button" (click)="rellenar('ADMINISTRADOR')">Usar cuenta de administrador</button>
+        </aside>
+      }
+      @case ('registro') {
+        <form [formGroup]="registro" (ngSubmit)="crear()" novalidate>
+          <label for="nombre">Nombre</label>
+          <input id="nombre" formControlName="nombre" autocomplete="name" required maxlength="100">
+          @if (error(registro.controls.nombre, 'El nombre'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+          <label for="correo">Correo electrónico</label>
+          <input id="correo" type="email" formControlName="correo" autocomplete="email" required maxlength="150">
+          @if (error(registro.controls.correo, 'El correo'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+          <label for="clave">Contraseña</label>
+          <input id="clave" type="password" formControlName="clave" autocomplete="new-password" aria-describedby="reglas" required minlength="10" maxlength="64">
+          <p id="reglas" class="ayuda">De 10 a 64 caracteres, con una letra, un número y un carácter especial.</p>
+          @if (error(registro.controls.clave, 'La contraseña'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+          <label for="confirmar">Confirmar contraseña</label>
+          <input id="confirmar" type="password" formControlName="confirmacion" autocomplete="new-password" required>
+          @if (error(registro.controls.confirmacion, 'La confirmación'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+          @if (registro.hasError('noCoincide') && registro.controls.confirmacion.touched) { <p class="validacion">Las contraseñas deben coincidir.</p> }
+          <button type="submit" class="boton" [disabled]="ocupado()">Registrar cuenta</button>
+        </form>
+        <div class="enlaces-formulario"><a routerLink="/ingresar">Iniciar sesión</a></div>
+      }
+      @case ('recuperar') {
+        @if (codigo(); as solicitud) {
+          <p class="mensaje">Código de demostración local <strong>{{ solicitud.valor }}</strong></p>
+          <form [formGroup]="cambio" (ngSubmit)="guardarClave()" novalidate>
+            <label for="codigo">Código de recuperación</label>
+            <input id="codigo" formControlName="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+            @if (cambio.controls.codigo.invalid && cambio.controls.codigo.touched) { <p class="validacion">Ingresa el código de seis dígitos.</p> }
+            <label for="clave">Nueva contraseña</label>
+            <input id="clave" type="password" formControlName="clave" autocomplete="new-password" required minlength="10" maxlength="64" aria-describedby="reglas">
+            <p id="reglas" class="ayuda">De 10 a 64 caracteres, con una letra, un número y un carácter especial.</p>
+            @if (error(cambio.controls.clave, 'La contraseña'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+            <label for="confirmar">Confirmar contraseña</label>
+            <input id="confirmar" type="password" formControlName="confirmacion" autocomplete="new-password" required>
+            @if (error(cambio.controls.confirmacion, 'La confirmación'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+            @if (cambio.hasError('noCoincide') && cambio.controls.confirmacion.touched) { <p class="validacion">Las contraseñas deben coincidir.</p> }
+            <button type="submit" class="boton" [disabled]="ocupado()">Actualizar contraseña</button>
+          </form>
+        } @else if (!aviso()) {
+          <form [formGroup]="recuperar" (ngSubmit)="generarCodigo()" novalidate>
+            <label for="correo">Correo de la cuenta</label>
+            <input id="correo" type="email" formControlName="correo" autocomplete="email" required>
+            @if (error(recuperar.controls.correo, 'El correo'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+            <button type="submit" class="boton">Generar código</button>
+          </form>
+        }
+        <div class="enlaces-formulario"><a routerLink="/ingresar">Iniciar sesión</a></div>
+      }
+      @case ('perfil') {
+        <p class="ayuda">Rol de la cuenta: {{ foro.cuenta()?.rol === 'ADMINISTRADOR' ? 'Administrador' : 'Usuario' }}</p>
+        <form [formGroup]="perfil" (ngSubmit)="guardarPerfil()" novalidate>
+          <label for="nombre">Nombre</label>
+          <input id="nombre" formControlName="nombre" autocomplete="name" required maxlength="100">
+          @if (error(perfil.controls.nombre, 'El nombre'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+          <label for="correo">Correo electrónico</label>
+          <input id="correo" type="email" formControlName="correo" autocomplete="email" required maxlength="150">
+          @if (error(perfil.controls.correo, 'El correo'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+          <button type="submit" class="boton">Guardar perfil</button>
+        </form>
+      }
+    }
+  </section>
+</div>

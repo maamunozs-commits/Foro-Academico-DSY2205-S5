@@ -11,3 +11,6 @@ $destinoOracle = $env:ORACLE_URL -replace '^jdbc:oracle:thin:@', ''
 if ($LASTEXITCODE -ne 0) { throw 'No se completó la creación de las tablas de usuarios.' }
 & sqlplus -L -s "MM_FORO/$($env:ORACLE_CLAVE_FORO)@$destinoOracle" "@$directorioSql/02_foro.sql"
 if ($LASTEXITCODE -ne 0) { throw 'No se completó la creación de las tablas del foro.' }
+
+& sqlplus -L -s "MM_FORO/$($env:ORACLE_CLAVE_FORO)@$destinoOracle" "@$directorioSql/04_moderacion.sql"
+if ($LASTEXITCODE -ne 0) { throw 'No se completó la migración de moderación.' }

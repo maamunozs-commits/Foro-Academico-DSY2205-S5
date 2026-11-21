@@ -1,0 +1,58 @@
+name: Verificar Foro Académico
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  compilacion:
+    name: Compilar Angular y verificar Java
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Compilar interfaz
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+      - name: Verificar microservicios
+        run: mvn -B -ntp -f sistema-foros-en-linea/pom.xml verify
+      - name: Empaquetar arquetipo
+        run: mvn -B -ntp -f arquetipo-servicio/pom.xml package
+
+  contenedores:
+    name: Ejecutar Docker y la colección Postman
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Iniciar el sistema y verificar sus API
+        working-directory: sistema-foros-en-linea
+        env:
+          ORACLE_CLAVE_ADMIN: IntegracionAdmin2026
+          ORACLE_CLAVE_USUARIOS: IntegracionUsuarios2026
+          ORACLE_CLAVE_FORO: IntegracionForo2026
+          JWT_SECRETO: EntornoTemporalIntegracionDSY2205Semana5
+        run: |
+          docker compose up -d --build
+          for puerto in 8081 8082 8083; do
+            curl --fail --silent --retry 25 --retry-delay 3 --retry-all-errors "http://localhost:${puerto}/actuator/health"
+          done
+          curl --fail --silent --retry 15 --retry-delay 2 --retry-all-errors http://localhost:8080/ > /dev/null
+          npx --yes --package newman@6 newman run postman/Foro_academico.postman_collection.json -e postman/Foro_local.postman_environment.json --color off

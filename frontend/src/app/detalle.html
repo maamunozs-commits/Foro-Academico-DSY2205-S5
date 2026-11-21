@@ -1,0 +1,48 @@
+<div class="contenedor pagina-detalle">
+  <a class="volver" routerLink="/">Volver a los temas</a>
+  @if (tema(); as item) {
+    <article class="panel detalle">
+      <div class="tema-etiqueta"><span class="tema-icono" [attr.data-color]="categoria()?.color" aria-hidden="true">{{ categoria()?.simbolo }}</span>{{ categoria()?.nombre }}</div>
+      <h1>{{ item.titulo }}</h1>
+      <p class="ayuda">{{ foro.nombre(item.autor) }} · <time [attr.datetime]="item.fecha">{{ item.fecha | date:'d MMMM y' }}</time></p>
+      <p class="texto-publicado">{{ item.texto }}</p>
+      @if (foro.cuenta()?.id === item.autor) { <a class="boton secundario" [routerLink]="['/temas', item.id, 'editar']">Editar tema</a> }
+    </article>
+    <section class="panel detalle comentarios" aria-labelledby="comentarios">
+      <h2 id="comentarios">Comentarios <span class="contador">{{ comentarios().length }}</span></h2>
+      @for (respuesta of comentarios(); track respuesta.id) {
+        <article class="comentario">
+          <p class="firma"><strong>{{ foro.nombre(respuesta.autor) }}</strong> <time [attr.datetime]="respuesta.fecha">{{ respuesta.fecha | date:'d MMM y' }}</time></p>
+          <p class="texto-publicado">{{ respuesta.texto }}</p>
+          @if (foro.cuenta()?.id === respuesta.autor) {
+            <div class="fila-botones">
+              @if (eliminar() === respuesta.id) {
+                <button class="boton peligro" type="button" (click)="confirmar(respuesta)">Confirmar eliminación</button>
+                <button class="enlace" type="button" (click)="eliminar.set(undefined)">Cancelar</button>
+              } @else {
+                <button class="enlace" type="button" (click)="editar(respuesta)">Editar comentario</button>
+                <button class="enlace" type="button" (click)="eliminar.set(respuesta.id)">Eliminar comentario</button>
+              }
+            </div>
+          }
+        </article>
+      } @empty { <p class="ayuda">Este tema todavía no tiene comentarios.</p> }
+      @if (estado()) { <p class="mensaje éxito" role="status">{{ estado() }}</p> }
+      @if (foro.cuenta()) {
+        <form (submit)="$event.preventDefault(); enviar()">
+          <label for="comentario">{{ editando() ? 'Editar mi comentario' : 'Escribir un comentario' }}</label>
+          <textarea id="comentario" [formControl]="comentario" rows="3" required maxlength="2000"></textarea>
+          @if (error(comentario, 'El comentario'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+          <div class="fila-botones">
+            <button type="submit" class="boton">{{ editando() ? 'Guardar comentario' : 'Comentar' }}</button>
+            @if (editando()) { <button type="button" class="enlace" (click)="cancelar()">Cancelar edición</button> }
+          </div>
+        </form>
+      } @else {
+        <p class="ayuda"><a routerLink="/ingresar" [queryParams]="{volver: '/temas/' + item.id}">Inicia sesión</a> para comentar.</p>
+      }
+    </section>
+  } @else {
+    <section class="panel detalle"><h1>Tema no disponible</h1><p>Selecciona un tema visible del listado.</p></section>
+  }
+</div>

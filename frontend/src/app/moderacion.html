@@ -1,0 +1,44 @@
+<div class="contenedor pagina-detalle moderacion">
+  <h1>Moderación</h1>
+  <p class="ayuda">Controla la visibilidad de los temas y comentarios del foro.</p>
+  <div class="filtros" role="group" aria-label="Tipo de contenido">
+    <button class="filtro" type="button" [class.activo]="lista() === 'Tema'" [attr.aria-pressed]="lista() === 'Tema'" (click)="ver('Tema')">Temas</button>
+    <button class="filtro" type="button" [class.activo]="lista() === 'Comentario'" [attr.aria-pressed]="lista() === 'Comentario'" (click)="ver('Comentario')">Comentarios</button>
+  </div>
+
+  @if (aviso()) { <p class="mensaje éxito" role="status">{{ aviso() }}</p> }
+  @if (seleccionado(); as item) {
+    <section class="panel detalle">
+      <h2>{{ item.oculto ? 'Restituir contenido' : 'Ocultar contenido' }}</h2>
+      <p>{{ item.texto }}</p>
+      <form [formGroup]="formulario" (ngSubmit)="aplicar()" novalidate>
+        <label for="motivo">Motivo de moderación</label>
+        <textarea id="motivo" formControlName="motivo" rows="3" required maxlength="300"></textarea>
+        @if (error(formulario.controls.motivo, 'El motivo'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+        <label class="confirmacion"><input type="checkbox" formControlName="confirmar" required> Confirmo el cambio de visibilidad.</label>
+        @if (formulario.controls.confirmar.invalid && formulario.controls.confirmar.touched) { <p class="validacion">Debes confirmar la acción.</p> }
+        <div class="fila-botones">
+          <button class="boton" type="submit">Aplicar decisión</button>
+          <button class="enlace" type="button" (click)="seleccionado.set(undefined)">Cancelar</button>
+        </div>
+      </form>
+    </section>
+  }
+
+  <section class="panel detalle lista-moderacion" aria-label="Contenido disponible para moderación">
+    @for (item of contenido(); track item.id) {
+      <article class="fila-moderacion">
+        <div><h2>{{ item.texto }}</h2><p class="ayuda">{{ foro.nombre(item.autor) }} <span class="estado" [class.oculto]="item.oculto">{{ item.oculto ? 'Oculto' : 'Visible' }}</span></p></div>
+        <button class="boton secundario" type="button" (click)="seleccionar(item)">{{ item.oculto ? 'Restituir' : 'Ocultar' }}</button>
+      </article>
+    } @empty { <p class="ayuda">No hay contenido de este tipo.</p> }
+  </section>
+  <section class="panel detalle">
+    <h2>Historial de decisiones</h2>
+    @for (accion of foro.acciones(); track $index) {
+      <article class="comentario"><p><strong>{{ accion.oculto ? 'Ocultamiento' : 'Restitución' }} · {{ accion.tipo }}</strong> <time [attr.datetime]="accion.fecha">{{ accion.fecha | date:'d MMM, HH:mm' }}</time></p>
+        <p>{{ accion.texto }}</p><p class="ayuda">{{ accion.motivo }}</p>
+      </article>
+    } @empty { <p class="ayuda">Aún no se han registrado decisiones.</p> }
+  </section>
+</div>

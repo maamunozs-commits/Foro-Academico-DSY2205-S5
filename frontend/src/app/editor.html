@@ -1,0 +1,27 @@
+<div class="contenedor pagina-estrecha pagina-media">
+  <a class="volver" routerLink="/">Volver a los temas</a>
+  <section class="panel formulario">
+    @if (id && !existente) {
+      <h1>Tema no editable</h1>
+      <p>La edición está disponible para el autor de un tema visible.</p>
+    } @else {
+      <h1>{{ id ? 'Editar tema' : 'Publicar tema' }}</h1>
+      @if (aviso()) { <p class="mensaje error" role="alert">{{ aviso() }}</p> }
+      <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+        <label for="categoria">Categoría</label>
+        <select id="categoria" formControlName="categoria" required>
+          <option value="" disabled>Selecciona una categoría</option>
+          @for (item of categorias; track item.id) { <option [value]="item.id">{{ item.nombre }}</option> }
+        </select>
+        @if (error(formulario.controls.categoria, 'La categoría'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+        <label for="titulo">Título</label>
+        <input id="titulo" formControlName="titulo" required maxlength="180">
+        @if (error(formulario.controls.titulo, 'El título'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+        <label for="texto">Contenido</label>
+        <textarea id="texto" rows="7" formControlName="texto" required maxlength="4000"></textarea>
+        @if (error(formulario.controls.texto, 'El contenido'); as detalle) { <p class="validacion">{{ detalle }}</p> }
+        <button class="boton" type="submit">{{ id ? 'Guardar cambios' : 'Publicar' }}</button>
+      </form>
+    }
+  </section>
+</div>

@@ -1,0 +1,27 @@
+<button class="salto" type="button" (click)="contenido.focus()">Ir al contenido principal</button>
+<header class="barra">
+  <div class="contenedor barra-interior">
+    <a class="marca" routerLink="/" aria-label="Foro Académico, inicio">
+      <span class="isotipo" aria-hidden="true">F</span>
+      <span>Foro Académico</span>
+    </a>
+    <nav aria-label="Principal">
+      <a routerLink="/" routerLinkActive="actual" [routerLinkActiveOptions]="{exact:true}">Temas</a>
+      @if (foro.cuenta(); as cuenta) {
+        @if (cuenta.rol === 'ADMINISTRADOR') {
+          <a routerLink="/moderacion" routerLinkActive="actual">Moderación</a>
+        }
+        <a routerLink="/perfil" routerLinkActive="actual">Mi perfil</a>
+        <button class="enlace" type="button" (click)="salir()">Salir</button>
+      } @else {
+        <a routerLink="/ingresar" routerLinkActive="actual">Ingresar</a>
+        <a routerLink="/registro" class="boton boton-navegacion">Crear cuenta</a>
+      }
+    </nav>
+  </div>
+</header>
+<main #contenido id="contenido" tabindex="-1"><router-outlet /></main>
+<footer class="pie contenedor">
+  <span>Foro Académico</span>
+  <span>Desarrollo Full Stack III · DSY2205</span>
+</footer>

@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: ${artifactId}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

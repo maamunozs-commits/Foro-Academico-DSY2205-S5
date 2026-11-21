@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "Foro académico de Matias Muñoz",
+    "name": "Foro Académico DSY2205 Semana 5",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Validación de usuarios, sesiones, permisos y operaciones del foro en Oracle."
+    "description": "Matias Muñoz · Operaciones y controles de los tres microservicios"
   },
   "item": [
     {
@@ -1148,6 +1148,350 @@
             "type": "text/javascript",
             "exec": [
               "pm.test('Respuesta HTTP 200', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Verificar servicio de moderación",
+      "request": {
+        "method": "GET",
+        "url": "{{url_moderacion}}/actuator/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Moderación está disponible', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rechazar moderación sin sesión",
+      "request": {
+        "method": "GET",
+        "url": "{{url_moderacion}}/api/moderacion/temas"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Restringir moderación al administrador",
+      "request": {
+        "method": "PUT",
+        "url": "{{url_moderacion}}/api/moderacion/temas/{{tema_prueba}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"oculto\": true, \"motivo\": \"Prueba de permisos\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token_usuario}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Consultar temas para moderación",
+      "request": {
+        "method": "GET",
+        "url": "{{url_moderacion}}/api/moderacion/temas",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token_administrador}}"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('El tema temporal aparece en la cola', () => pm.expect(pm.response.json().some(t => String(t.id) === String(pm.collectionVariables.get('tema_prueba')))).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rechazar decisión sin motivo",
+      "request": {
+        "method": "PUT",
+        "url": "{{url_moderacion}}/api/moderacion/temas/{{tema_prueba}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"oculto\": true, \"motivo\": \" \"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token_administrador}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ocultar comentario temporal",
+      "request": {
+        "method": "PUT",
+        "url": "{{url_moderacion}}/api/moderacion/temas/{{tema_prueba}}/comentarios/{{comentario_prueba}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"oculto\": true, \"motivo\": \"Validación académica del ocultamiento\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token_administrador}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Comentario oculto y motivo persistido', () => { const r = pm.response.json(); pm.expect(r.oculto).to.eql(true); pm.expect(r.motivo).to.eql('Validación académica del ocultamiento'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Verificar comentario oculto en la vista pública",
+      "request": {
+        "method": "GET",
+        "url": "{{url_foro}}/api/temas/{{tema_prueba}}/comentarios"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('El comentario no es público', () => pm.expect(pm.response.json().some(c => String(c.id) === String(pm.collectionVariables.get('comentario_prueba')))).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Restituir comentario temporal",
+      "request": {
+        "method": "PUT",
+        "url": "{{url_moderacion}}/api/moderacion/temas/{{tema_prueba}}/comentarios/{{comentario_prueba}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"oculto\": false, \"motivo\": \"Restitución del comentario\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token_administrador}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Comentario restituido', () => pm.expect(pm.response.json().oculto).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ocultar tema temporal",
+      "request": {
+        "method": "PUT",
+        "url": "{{url_moderacion}}/api/moderacion/temas/{{tema_prueba}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"oculto\": true, \"motivo\": \"Validación académica del ocultamiento\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token_administrador}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Tema oculto con administrador asignado', () => { const r = pm.response.json(); pm.expect(r.oculto).to.eql(true); pm.expect(r.administradorId).to.be.a('number'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Verificar tema oculto en la vista pública",
+      "request": {
+        "method": "GET",
+        "url": "{{url_foro}}/api/temas/{{tema_prueba}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 404', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Restituir tema temporal",
+      "request": {
+        "method": "PUT",
+        "url": "{{url_moderacion}}/api/moderacion/temas/{{tema_prueba}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"oculto\": false, \"motivo\": \"Restitución del tema\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token_administrador}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Tema restituido', () => pm.expect(pm.response.json().oculto).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Consultar tema restituido",
+      "request": {
+        "method": "GET",
+        "url": "{{url_foro}}/api/temas/{{tema_prueba}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('La restitución recupera el mismo tema', () => pm.expect(String(pm.response.json().id)).to.eql(String(pm.collectionVariables.get('tema_prueba'))));"
             ]
           }
         }

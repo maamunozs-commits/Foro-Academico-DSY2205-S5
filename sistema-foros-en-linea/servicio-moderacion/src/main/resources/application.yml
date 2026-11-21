@@ -1,0 +1,15 @@
+server:
+  port: ${PUERTO_MODERACION:8083}
+spring:
+  application:
+    name: servicio-moderacion
+foro:
+  url: ${FORO_URL:http://localhost:8082}
+seguridad:
+  jwt:
+    secreto: ${JWT_SECRETO}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
